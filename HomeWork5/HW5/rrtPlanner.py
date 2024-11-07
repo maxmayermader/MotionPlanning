@@ -1,13 +1,33 @@
 # File: RRTPlanner.py
 import numpy as np
-from typing import Tuple, List, Optional
-from RRTGrapgh import CircleCollisionChecker, RRTGraph
+from typing import List, Tuple, Optional
+
+from RRTGraph import RRTGraph, Edge
+
+
+class CircleCollisionChecker:
+    """Collision checker for circular obstacles"""
+
+    def __init__(self, centers: List[Tuple[float, float]], radii: List[float]):
+        if len(centers) != len(radii):
+            raise ValueError("Number of centers must match number of radii")
+        self.centers = np.array(centers)
+        self.radii = np.array(radii)
+
+    def checkCollision(self, point: np.ndarray) -> bool:
+        """Check if point collides with any obstacle"""
+        for center, radius in zip(self.centers, self.radii):
+            if self._isInsideCircle(point, center, radius):
+                return True
+        return False
+
+    def _isInsideCircle(self, point: np.ndarray, center: np.ndarray, radius: float) -> bool:
+        """Check if point is inside circle"""
+        return np.linalg.norm(point - center) <= radius
 
 
 class RRTPlanner:
-    """
-    Implementation of the RRT planning algorithm.
-    """
+    """RRT (Rapidly-exploring Random Tree) planning algorithm"""
 
     def __init__(self,
                  stateBounds: List[Tuple[float, float]],
@@ -23,56 +43,45 @@ class RRTPlanner:
         self.graph = RRTGraph()
 
     def plan(self, startState: np.ndarray, goalState: np.ndarray) -> Tuple[List[np.ndarray], bool]:
-        """Plan a path from start to goal state."""
+        """Plan a path from start to goal state"""
         startId = self.graph.addVertex(startState)
 
         for _ in range(self.maxIterations):
-            # Sample random state
             if np.random.random() < self.goalSampleRate:
                 randomState = goalState
             else:
                 randomState = self._sampleRandomState()
 
-            # Find nearest vertex
             nearestId = self.graph.getNearestVertex(
                 randomState,
                 lambda s1, s2: np.linalg.norm(s1 - s2)
             )
 
-            # Extend towards random state
             newState = self._extend(self.graph.vertices[nearestId], randomState)
 
-            # Check if extension is valid
             if newState is not None and not self.collisionChecker.checkCollision(newState):
                 newId = self.graph.addVertex(newState)
-                self.graph.addEdge(
-                    nearestId,
-                    newId,
-                    self._createEdge(self.graph.vertices[nearestId], newState)
-                )
+                edge = Edge(self.graph.vertices[nearestId], newState)
+                self.graph.addEdge(nearestId, newId, edge)
 
-                # Check if we can connect to goal
                 if np.linalg.norm(newState - goalState) < self.stepSize:
                     if not self._checkPathCollision(newState, goalState):
                         goalId = self.graph.addVertex(goalState)
-                        self.graph.addEdge(
-                            newId,
-                            goalId,
-                            self._createEdge(newState, goalState)
-                        )
+                        goalEdge = Edge(newState, goalState)
+                        self.graph.addEdge(newId, goalId, goalEdge)
                         return self.graph.getPath(startId, goalId), True
 
         return [], False
 
     def _sampleRandomState(self) -> np.ndarray:
-        """Sample a random state within the state bounds."""
+        """Sample random state within bounds"""
         return np.array([
             np.random.uniform(low, high)
             for low, high in self.stateBounds
         ])
 
     def _extend(self, fromState: np.ndarray, toState: np.ndarray) -> Optional[np.ndarray]:
-        """Extend from one state towards another by at most stepSize."""
+        """Extend from one state towards another"""
         direction = toState - fromState
         distance = np.linalg.norm(direction)
 
@@ -82,7 +91,7 @@ class RRTPlanner:
         return fromState + (direction / distance) * self.stepSize
 
     def _checkPathCollision(self, state1: np.ndarray, state2: np.ndarray) -> bool:
-        """Check if path between two states collides with obstacles."""
+        """Check if path between states collides with obstacles"""
         direction = state2 - state1
         distance = np.linalg.norm(direction)
         steps = max(int(distance / self.stepSize), 1)
@@ -93,11 +102,3 @@ class RRTPlanner:
             if self.collisionChecker.checkCollision(state):
                 return True
         return False
-
-    def _createEdge(self, state1: np.ndarray, state2: np.ndarray) -> dict:
-        """Create an edge between two states."""
-        return {
-            'cost': np.linalg.norm(state2 - state1),
-            'state1': state1,
-            'state2': state2
-        }
