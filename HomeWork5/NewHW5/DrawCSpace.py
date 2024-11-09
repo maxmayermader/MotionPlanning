@@ -52,7 +52,7 @@ class CSpaceDrawer:
         """Draw a configuration with orientation"""
         if len(point) == 3:  # If point includes orientation
             # Draw position
-            self.ax.scatter(point[0], point[1], c=color, marker=(3, 0, np.degrees(point[2])), s=size)
+            self.ax.scatter(point[0], point[1], c=color, marker=(3, 0, point[2]), s=size)
             # Draw orientation arrow
             arrow_length = 0.3
             # dx = arrow_length * np.cos(point[2])
@@ -64,7 +64,7 @@ class CSpaceDrawer:
         #     self.ax.scatter(point[0], point[1], c=color, marker=marker, s=size)
 
     def drawGraph(self, vertices, edges):
-        """Draw RRT graph with Dubins paths"""
+        """Draw RRT graph with Dubins paths and car positions"""
         # Draw edges
         for edge_id in edges:
             start = vertices[edge_id[0]]
@@ -72,16 +72,27 @@ class CSpaceDrawer:
             # Create a Dubins path for visualization
             edge = DubinsEdge(start, end, turning_radius=0.5)
             points = edge.discretize(0.1)
+
             if len(points) > 1:
                 points = np.array(points)
+                if len(points.shape) == 1:
+                    points = points.reshape(-1, 3)
+
+                # Plot the path
                 self.ax.plot(points[:, 0], points[:, 1], 'k-', alpha=0.3)
+
+                # Plot car positions at regular intervals
+                step = len(points) // 2  # Use half the points
+                if step > 0:  # Ensure we have enough points
+                    for i in range(0, len(points), step):
+                        self.drawPoint(points[i], color='gray', size=100)
 
         # Draw vertices
         for state in vertices.values():
-            self.drawPoint(state, color='black', size=20)
+            self.drawPoint(state, color='black', size=100)
 
     def drawPath(self, path, color='blue', linewidth=2):
-        """Draw solution path with Dubins curves"""
+        """Draw solution path with Dubins curves and car positions"""
         if len(path) < 2:
             return
 
@@ -90,16 +101,19 @@ class CSpaceDrawer:
             edge = DubinsEdge(path[i], path[i + 1], turning_radius=0.5)
             points = edge.discretize(0.1)
 
-            # Convert points to numpy array if not already
+            # Convert points to numpy array and reshape if needed
             points = np.array(points)
-
-            # Check if points need reshaping
             if len(points.shape) == 1:
-                # If points is 1D, reshape it to 2D
                 points = points.reshape(-1, 3)
 
-            # Plot only x and y coordinates
+            # Plot the path
             self.ax.plot(points[:, 0], points[:, 1], color=color, linewidth=linewidth)
+
+            # Plot car positions at regular intervals
+            step = len(points) // 2  # Use half the points
+            if step > 0:  # Ensure we have enough points
+                for j in range(0, len(points), step):
+                    self.drawPoint(points[j], color='green', size=150)
 
     def show(self):
         """Display the plot"""

@@ -25,7 +25,7 @@ class DubinsEdge(Edge):
     def getCost(self):
         return self.length
 
-    
+
 
 class CircleCollisionChecker:
     """Collision checker for two half-circle obstacles"""
