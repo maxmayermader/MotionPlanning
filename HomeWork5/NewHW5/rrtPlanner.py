@@ -6,9 +6,15 @@ import dubins  # Import the dubins library for Dubins curve computation
 from RRTGraph import RRTGraph, Edge
 
 
+
 class DubinsEdge(Edge):
-    def __init__(self, state1: np.ndarray, state2: np.ndarray, turning_radius: float = 0.5):
+    def __init__(self, state1: np.ndarray, state2: np.ndarray, max_steering_angle: float = np.pi / 4):
         super().__init__(state1, state2)
+
+        # Calculate turning radius based on maximum steering angle
+        turning_radius = self.calculate_turning_radius(max_steering_angle)
+
+        # Create dubins path between configurations
         q1 = (state1[0], state1[1], state1[2])
         q2 = (state2[0], state2[1], state2[2])
         self.path = dubins.shortest_path(q1, q2, turning_radius)
@@ -22,9 +28,26 @@ class DubinsEdge(Edge):
             self.points = np.array(configurations)
         return self.points
 
-    def getCost(self):
-        return self.length
+    def calculate_turning_radius(self, steering_angle: float, wheelbase_length: float = 1.0) -> float:
+        """
+        Calculate the turning radius for the Dubins car.
 
+        Args:
+            steering_angle (float): The steering angle φ in radians
+            wheelbase_length (float): The wheelbase length L (default=1.0)
+
+        Returns:
+            float: The turning radius ρ
+        """
+        # Avoid division by zero
+        if abs(steering_angle) < 1e-6:
+            return float('inf')
+
+        # Calculate turning radius: ρ = L/tan(φ)
+        turning_radius = abs(wheelbase_length / np.tan(steering_angle))
+
+        # Ensure minimum turning radius constraint (ρ_min = 0.5)
+        return max(turning_radius, 0.5)
 
 class CircleCollisionChecker:
     """Collision checker for two half-circle obstacles"""
@@ -66,7 +89,7 @@ class RRTPlanner:
         self.stepSize = stepSize
         self.maxIterations = maxIterations
         self.goalSampleRate = goalSampleRate
-        self.turningRadius = turningRadius
+        # self.turningRadius = turningRadius
         self.graph = RRTGraph()
         self.tolerance = 1e-3
 
@@ -102,7 +125,7 @@ class RRTPlanner:
 
             # Create Dubins path to random state
             nearestState = self.graph.vertices[nearestId]
-            edge = DubinsEdge(nearestState, randomState, self.turningRadius)
+            edge = DubinsEdge(nearestState, randomState)#, self.turningRadius)
 
             # Check path collision
             if not self._checkPathCollision(edge):
@@ -111,7 +134,7 @@ class RRTPlanner:
 
                 # Try connecting to goal
                 if np.linalg.norm(randomState[:2] - goalState[:2]) < self.stepSize:
-                    goalEdge = DubinsEdge(randomState, goalState, self.turningRadius)
+                    goalEdge = DubinsEdge(randomState, goalState)#, self.turningRadius)
                     if not self._checkPathCollision(goalEdge):
                         goalId = self.graph.addVertex(goalState)
                         self.graph.addEdge(newId, goalId, goalEdge)

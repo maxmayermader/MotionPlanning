@@ -56,6 +56,7 @@ def main():
         print("Path found!")
         print(f"Path length: {len(path)} points")
     else:
+        drawer.drawGraph(planner.graph.vertices, planner.graph.edges)
         print("No path found!")
 
     # Add title and show plot
