@@ -52,8 +52,10 @@ class CSpaceDrawer:
         """Draw a configuration with orientation"""
         if len(point) == 3:  # If point includes orientation
             # Draw position
-            self.ax.scatter(point[0], point[1], c=color, marker=(3, 0, point[2]), s=size)
+            # self.ax.scatter(point[0], point[1], c=color, marker=(3, 0, point[2]), s=size)
             # Draw orientation arrow
+            self.ax.plot(point[0], point[1], marker=(3, 0, np.degrees(point[2])), markersize=8, color=color)
+
             arrow_length = 0.3
             # dx = arrow_length * np.cos(point[2])
             # dy = arrow_length * np.sin(point[2])
