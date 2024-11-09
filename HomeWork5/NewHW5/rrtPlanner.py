@@ -29,8 +29,8 @@ class DubinsEdge(Edge):
 class CircleCollisionChecker:
     """Collision checker for two half-circle obstacles"""
 
-    def __init__(self):
-        self.centers = [(0, -1), (0, 1)]  # Centers of half circles
+    def __init__(self, centers: List[Tuple[float, float]] = [(0, -1), (0, 1)]):
+        self.centers = centers # Centers of half circles
         self.radius = 0.8  # radius = 1 - dt, where dt = 0.2
         self.world_bounds = [(-3, 3), (-1, 1)]  # World boundaries
 
@@ -109,7 +109,7 @@ class RRTPlanner:
         """Sample random state (x, y, θ)"""
         x = np.random.uniform(self.stateBounds[0][0], self.stateBounds[0][1])
         y = np.random.uniform(self.stateBounds[1][0], self.stateBounds[1][1])
-        theta = np.random.uniform(-np.pi, np.pi)
+        theta = np.random.uniform(self.stateBounds[2][0], self.stateBounds[2][1])
         return np.array([x, y, theta])
 
     def _checkPathCollision(self, edge: DubinsEdge) -> bool:
