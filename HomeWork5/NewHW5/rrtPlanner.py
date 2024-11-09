@@ -7,30 +7,30 @@ from RRTGraph import RRTGraph, Edge
 
 
 class DubinsEdge(Edge):
-    """Edge class for Dubins car paths"""
-
     def __init__(self, state1: np.ndarray, state2: np.ndarray, turning_radius: float = 0.5):
         super().__init__(state1, state2)
-        # Create dubins path between configurations
         q1 = (state1[0], state1[1], state1[2])
         q2 = (state2[0], state2[1], state2[2])
         self.path = dubins.shortest_path(q1, q2, turning_radius)
         self.length = self.path.path_length()
-
-    def getCost(self):
-        return self.length
+        self.points = None  # Store discretized points
 
     def discretize(self, step_size: float = 0.1):
         """Return discretized points along the Dubins path"""
-        configurations, _ = self.path.sample_many(step_size)
-        return configurations
+        if self.points is None:
+            configurations, _ = self.path.sample_many(step_size)
+            self.points = np.array(configurations)
+        return self.points
+
+    def getCost(self):
+        return self.length
 
 
 class CircleCollisionChecker:
     """Collision checker for two half-circle obstacles"""
 
     def __init__(self, centers: List[Tuple[float, float]] = [(0, -1), (0, 1)]):
-        self.centers = centers # Centers of half circles
+        self.centers = centers  # Centers of half circles
         self.radius = 0.8  # radius = 1 - dt, where dt = 0.2
         self.world_bounds = [(-3, 3), (-1, 1)]  # World boundaries
 
@@ -68,6 +68,13 @@ class RRTPlanner:
         self.goalSampleRate = goalSampleRate
         self.turningRadius = turningRadius
         self.graph = RRTGraph()
+        self.tolerance = 1e-3
+
+    def _isWithinTolerance(self, state1: np.ndarray, state2: np.ndarray) -> bool:
+        """Check if two states are within tolerance"""
+        pos_diff = np.linalg.norm(state1[:2] - state2[:2])
+        angle_diff = abs(state1[2] - state2[2]) % (2 * np.pi)
+        return pos_diff < self.tolerance and angle_diff < self.tolerance
 
     def plan(self, startState: np.ndarray, goalState: np.ndarray) -> Tuple[List[np.ndarray], bool]:
         """Plan a path from start to goal state"""
@@ -79,6 +86,13 @@ class RRTPlanner:
                 randomState = goalState
             else:
                 randomState = self._sampleRandomState()
+
+            # Check if random state is within tolerance of existing vertices
+            for vertex_id, vertex_state in self.graph.vertices.items():
+                if self._isWithinTolerance(randomState, vertex_state):
+                    randomState = vertex_state
+                    break
+
 
             # Find nearest vertex
             nearestId = self.graph.getNearestVertex(

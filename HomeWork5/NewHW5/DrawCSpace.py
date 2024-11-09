@@ -2,6 +2,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from rrtPlanner import DubinsEdge
+
+
 class CSpaceDrawer:
     """Visualization class for configuration space"""
     def __init__(self, stateBounds: list, figsize=(10, 10)):
@@ -38,12 +41,12 @@ class CSpaceDrawer:
             circle = plt.Circle(center, radius, color='red', alpha=0.1)
             self.ax.add_artist(circle)
 
-    def drawPath(self, path, color='blue', linewidth=2):
-        """Draw solution path"""
-        if len(path) < 2:
-            return
-        path = np.array(path)
-        self.ax.plot(path[:, 0], path[:, 1], color=color, linewidth=linewidth)
+    # def drawPath(self, path, color='blue', linewidth=2):
+    #     """Draw solution path"""
+    #     if len(path) < 2:
+    #         return
+    #     path = np.array(path)
+    #     self.ax.plot(path[:, 0], path[:, 1], color=color, linewidth=linewidth)
 
     def drawPoint(self, point, color='black', size=100):
         """Draw a configuration with orientation"""
@@ -66,22 +69,37 @@ class CSpaceDrawer:
         for edge_id in edges:
             start = vertices[edge_id[0]]
             end = vertices[edge_id[1]]
-            # Draw straight line for now (you can modify this to draw Dubins curves)
-            self.ax.plot([start[0], end[0]], [start[1], end[1]], 'k-', alpha=0.3)
+            # Create a Dubins path for visualization
+            edge = DubinsEdge(start, end, turning_radius=0.5)
+            points = edge.discretize(0.1)
+            if len(points) > 1:
+                points = np.array(points)
+                self.ax.plot(points[:, 0], points[:, 1], 'k-', alpha=0.3)
 
-        # Draw vertices with orientations
+        # Draw vertices
         for state in vertices.values():
-            if len(state) == 3:  # If state includes orientation
-                # Draw small arrow for orientation
-                arrow_length = 0.2
-                dx = arrow_length * np.cos(state[2])
-                dy = arrow_length * np.sin(state[2])
-                # self.drawPoint(state, color='black', size=20)
-                # self.ax.arrow(state[0], state[1], dx, dy,
-                #             head_width=0.05, head_length=0.05,
-                #             fc='black', ec='black', alpha=0.5)
             self.drawPoint(state, color='black', size=20)
-            # self.ax.scatter(state[0], state[1], c='black', s=20)
+
+    def drawPath(self, path, color='blue', linewidth=2):
+        """Draw solution path with Dubins curves"""
+        if len(path) < 2:
+            return
+
+        # Draw Dubins path between consecutive configurations
+        for i in range(len(path) - 1):
+            edge = DubinsEdge(path[i], path[i + 1], turning_radius=0.5)
+            points = edge.discretize(0.1)
+
+            # Convert points to numpy array if not already
+            points = np.array(points)
+
+            # Check if points need reshaping
+            if len(points.shape) == 1:
+                # If points is 1D, reshape it to 2D
+                points = points.reshape(-1, 3)
+
+            # Plot only x and y coordinates
+            self.ax.plot(points[:, 0], points[:, 1], color=color, linewidth=linewidth)
 
     def show(self):
         """Display the plot"""

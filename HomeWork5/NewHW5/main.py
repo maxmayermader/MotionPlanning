@@ -43,11 +43,16 @@ def main():
     drawer.drawPoint(goalState, color='red', size=200)
 
     if success:
-        # Draw the RRT tree
-        drawer.drawGraph(planner.graph.vertices, planner.graph.edges.keys())
 
+        # drawer.drawGraph(planner.graph.vertices, planner.graph.edges.keys())
+
+
+        # drawer.drawPath(path)
+        # Draw the RRT graph
+        drawer.drawGraph(planner.graph.vertices, planner.graph.edges)
         # Draw the final path
         drawer.drawPath(path)
+
         print("Path found!")
         print(f"Path length: {len(path)} points")
     else:
