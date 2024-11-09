@@ -70,7 +70,7 @@ class CSpaceDrawer:
             start = vertices[edge_id[0]]
             end = vertices[edge_id[1]]
             # Create a Dubins path for visualization
-            edge = DubinsEdge(start, end)
+            edge = DubinsEdge(start, end, turning_radius=0.5)
             points = edge.discretize(0.1)
             if len(points) > 1:
                 points = np.array(points)
