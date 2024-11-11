@@ -55,18 +55,60 @@ class RRTGraph:
         self.edges[(startId, endId)] = (edge.getCost(), edge)
         self.parents[endId].append(startId)
 
-    def getNearestVertex(self, state: np.ndarray, distanceFunc) -> int:
-        """Find nearest vertex to given state using provided distance function"""
+    def getNearestVertex(self, state: np.ndarray, distanceFunc, step_size: float = 0.1) -> Tuple[int, np.ndarray]:
+        """
+        Find nearest point along any edge or vertex to the given state.
+        Returns: Tuple of (nearest vertex ID, nearest point)
+        """
         minDist = float('inf')
         nearestVertex = None
+        nearestPoint = None
 
+        # Check all vertices first
         for vertexId, vertexState in self.vertices.items():
             dist = distanceFunc(vertexState, state)
             if dist < minDist:
                 minDist = dist
                 nearestVertex = vertexId
+                nearestPoint = vertexState
 
-        return nearestVertex
+        # Check all edges
+        for (v1_id, v2_id), (_, edge) in self.edges.items():
+            if isinstance(edge, DubinsEdge):
+                # Get discretized points along the Dubins path
+                points = edge.discretize(step_size)
+                for point in points:
+                    dist = distanceFunc(point, state)
+                    if dist < minDist:
+                        minDist = dist
+                        nearestVertex = v1_id  # Associate with start vertex of edge
+                        nearestPoint = point
+            else:
+                # For straight-line edges, use linear interpolation
+                v1_state = self.vertices[v1_id]
+                v2_state = self.vertices[v2_id]
+
+                # Project point onto line segment
+                edge_vector = v2_state - v1_state
+                edge_length = np.linalg.norm(edge_vector)
+                if edge_length == 0:
+                    continue
+
+                edge_direction = edge_vector / edge_length
+                v1_to_state = state - v1_state
+                projection_length = np.dot(v1_to_state, edge_direction)
+
+                # Clamp projection to edge segment
+                projection_length = max(0, min(edge_length, projection_length))
+                projected_point = v1_state + projection_length * edge_direction
+
+                dist = distanceFunc(projected_point, state)
+                if dist < minDist:
+                    minDist = dist
+                    nearestVertex = v1_id
+                    nearestPoint = projected_point
+
+        return nearestVertex, nearestPoint
 
     def getPath(self, startId: int, goalId: int) -> List[np.ndarray]:
         """Get path from start to goal vertex"""

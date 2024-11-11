@@ -1,9 +1,7 @@
 # File: RRTPlanner.py
 import numpy as np
 from typing import List, Tuple, Optional
-from RRTGraph import RRTGraph, Edge
-
-
+from RRTGraph import RRTGraph, Edge, DubinsEdge
 
 
 class CircleCollisionChecker:
@@ -37,7 +35,7 @@ class RRTPlanner:
     def __init__(self,
                  stateBounds: List[Tuple[float, float]],
                  collisionChecker: CircleCollisionChecker,
-                 stepSize: float = 0.5,
+                 stepSize: float = 0.1,
                  maxIterations: int = 1000,
                  goalSampleRate: float = 0.1,
                  turningRadius: float = 0.5):
@@ -75,9 +73,14 @@ class RRTPlanner:
 
 
             # Find nearest vertex
-            nearestId = self.graph.getNearestVertex(
-                randomState,
-                lambda s1, s2: np.linalg.norm(s1[:2] - s2[:2])  # Only consider x,y for distance
+            # nearestId = self.graph.getNearestVertex(
+            #     randomState,
+            #     lambda s1, s2: np.linalg.norm(s1[:2] - s2[:2])  # Only consider x,y for distance
+            # )
+            # Example usage
+            nearestId, nearest_point = self.graph.getNearestVertex(
+                state=randomState,
+                distanceFunc=lambda a, b: np.linalg.norm(a[:2] - b[:2])
             )
 
             # Create Dubins path to random state
