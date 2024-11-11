@@ -1,29 +1,8 @@
 # File: RRTPlanner.py
 import numpy as np
 from typing import List, Tuple, Optional
-import dubins  # Import the dubins library for Dubins curve computation
-
 from RRTGraph import RRTGraph, Edge
 
-
-class DubinsEdge(Edge):
-    def __init__(self, state1: np.ndarray, state2: np.ndarray, turning_radius: float = 0.5):
-        super().__init__(state1, state2)
-        q1 = (state1[0], state1[1], state1[2])
-        q2 = (state2[0], state2[1], state2[2])
-        self.path = dubins.shortest_path(q1, q2, turning_radius)
-        self.length = self.path.path_length()
-        self.points = None  # Store discretized points
-
-    def discretize(self, step_size: float = 0.1):
-        """Return discretized points along the Dubins path"""
-        if self.points is None:
-            configurations, _ = self.path.sample_many(step_size)
-            self.points = np.array(configurations)
-        return self.points
-
-    def getCost(self):
-        return self.length
 
 
 
@@ -88,11 +67,11 @@ class RRTPlanner:
             else:
                 randomState = self._sampleRandomState()
 
-            # Check if random state is within tolerance of existing vertices
-            for vertex_id, vertex_state in self.graph.vertices.items():
-                if self._isWithinTolerance(randomState, vertex_state):
-                    randomState = vertex_state
-                    break
+            # # Check if random state is within tolerance of existing vertices
+            # for vertex_id, vertex_state in self.graph.vertices.items():
+            #     if self._isWithinTolerance(randomState, vertex_state):
+            #         randomState = vertex_state
+            #         break
 
 
             # Find nearest vertex
