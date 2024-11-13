@@ -1,4 +1,6 @@
 # File: RRTPlanner.py
+import math
+
 import numpy as np
 from typing import List, Tuple, Optional
 from RRTGraph import RRTGraph, Edge, DubinsEdge
@@ -10,20 +12,23 @@ class CircleCollisionChecker:
     def __init__(self, centers: List[Tuple[float, float]] = [(0, -1), (0, 1)]):
         self.centers = centers  # Centers of half circles
         self.radius = 0.8  # radius = 1 - dt, where dt = 0.2
-        self.world_bounds = [(-3, 3), (-1, 1)]  # World boundaries
+        self.wordBounds = [[-3, 3], [-1, 1]]
+
+    def checkWorldBounds(self, state: np.ndarray) -> bool:
+        """Check if state is within world bounds"""
+        x, y = state[0], state[1]
+        return not (self.wordBounds[0][0] <= x <= self.wordBounds[0][1] and self.wordBounds[1][0] <= y <= self.wordBounds[1][1])
+
 
     def checkCollision(self, state: np.ndarray) -> bool:
         """Check if state collides with obstacles or is outside world bounds"""
         x, y = state[0], state[1]
-
-        # Check world bounds
-        if (x < self.world_bounds[0][0] or x > self.world_bounds[0][1] or
-                y < self.world_bounds[1][0] or y > self.world_bounds[1][1]):
+        if self.checkWorldBounds(state):
             return True
-
         # Check half circles
         for center in self.centers:
-            dist = np.sqrt((x - center[0]) ** 2 + (y - center[1]) ** 2)
+            # dist = np.sqrt(((x - center[0]) ** 2) + ((y - center[1]) ** 2))
+            dist = math.sqrt(((x - center[0]) ** 2) + ((y - center[1]) ** 2))
             if dist <= self.radius:
                 return True
         return False
@@ -85,12 +90,22 @@ class RRTPlanner:
 
             # Create Dubins path to random state
             nearestState = self.graph.vertices[nearestId]
-            edge = DubinsEdge(nearestState, randomState, self.turningRadius)
+            # edge = DubinsEdge(nearestState, randomState, self.turningRadius)
+
+            edge = self._getNonCollidingEdge(nearestState, randomState, self.turningRadius)
+
 
             # Check path collision
             if not self._checkPathCollision(edge):
                 newId = self.graph.addVertex(randomState)
                 self.graph.addEdge(nearestId, newId, edge)
+
+                if (-0.8 <= nearest_point[0] <= 0.8 and (nearest_point[1] <= -0.25 or nearest_point[1] >= 0.25)) or (
+                        0.8 <= randomState[0] <= 0.8 and (randomState[1] <= -0.25 or randomState[1] >= 0.25)):
+                    print("bad")
+                    print(nearestState[0], nearestState[1])
+                    print(randomState[0], randomState[1])
+                    print(self._checkPathCollision(edge))
 
                 # Try connecting to goal
                 if np.linalg.norm(randomState[:2] - goalState[:2]) < self.stepSize:
@@ -111,8 +126,28 @@ class RRTPlanner:
 
     def _checkPathCollision(self, edge: DubinsEdge) -> bool:
         """Check if Dubins path collides with obstacles"""
+
+        # Check world bounds
         configurations = edge.discretize(self.stepSize)
         for config in configurations:
+            if (config[0] < self.stateBounds[0][0] or config[0] > self.stateBounds[0][1] or
+                    config[1] < self.stateBounds[1][0] or config[1] > self.stateBounds[1][1]):
+                return True
+
             if self.collisionChecker.checkCollision(config):
                 return True
         return False
+
+    def _getNonCollidingEdge(self, nearestState, randomState, turningRadius) -> Tuple[np.ndarray, np.ndarray]:
+        """Find the last non-colliding configuration along the Dubins path"""
+        edge = DubinsEdge(nearestState, randomState, turningRadius)
+        newEdge = None
+        configurations = edge.discretize(self.stepSize)
+        lastCollision = None
+        for i, point in enumerate(configurations):
+            if not self._checkPathCollision(point):
+                lastCollision = configurations[:i]
+            else:
+                newEdge = DubinsEdge(nearestState, lastCollision[-1], turningRadius)
+                break
+        return newEdge

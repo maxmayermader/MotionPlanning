@@ -28,8 +28,9 @@ class DubinsEdge(Edge):
     def discretize(self, step_size: float = 0.1):
         """Return discretized points along the Dubins path"""
         if self.points is None:
-            configurations, _ = self.path.sample_many(step_size)
+            configurations, idk = self.path.sample_many(step_size)
             self.points = np.array(configurations)
+            print(idk)
         return self.points
 
     def getCost(self):
