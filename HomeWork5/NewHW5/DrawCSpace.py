@@ -7,8 +7,8 @@ from rrtPlanner import DubinsEdge
 
 class CSpaceDrawer:
     def __init__(self, stateBounds: list, figsize=(10, 10)):
-        # self.stateBounds = stateBounds
-        self.stateBounds = [[-0.8, 0.8], [-1, 1]]
+        self.stateBounds = stateBounds
+        # self.stateBounds = [[-0.8, 0.8], [-1, 1]]
         self.figsize = figsize
         self.fig, self.ax = plt.subplots(figsize=figsize)
         self._setupPlot()

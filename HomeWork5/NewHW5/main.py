@@ -38,9 +38,7 @@ def main():
     # Draw obstacles
     drawer.drawObstacles(centers, radii)
 
-    # Draw start and goal configurations with orientation arrows
-    drawer.drawPoint(startState, color='green', size=200)
-    drawer.drawPoint(goalState, color='red', size=200)
+
 
     if success:
 
@@ -59,6 +57,9 @@ def main():
         drawer.drawGraph(planner.graph.vertices, planner.graph.edges)
         print("No path found!")
 
+    # Draw start and goal configurations with orientation arrows
+    drawer.drawPoint(startState, color='green', size=200)
+    drawer.drawPoint(goalState, color='red', size=200)
     # Add title and show plot
     drawer.ax.set_title("RRT Path Planning for Dubins Car", fontsize=16)
     drawer.show()
