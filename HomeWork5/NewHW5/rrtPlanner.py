@@ -12,19 +12,11 @@ class CircleCollisionChecker:
     def __init__(self, centers: List[Tuple[float, float]] = [(0, -1), (0, 1)]):
         self.centers = centers  # Centers of half circles
         self.radius = 0.8  # radius = 1 - dt, where dt = 0.2
-        self.wordBounds = [[-3, 3], [-1, 1]]
-
-    def checkWorldBounds(self, state: np.ndarray) -> bool:
-        """Check if state is within world bounds"""
-        x, y = state[0], state[1]
-        return not (self.wordBounds[0][0] <= x <= self.wordBounds[0][1] and self.wordBounds[1][0] <= y <= self.wordBounds[1][1])
-
 
     def checkCollision(self, state: np.ndarray) -> bool:
         """Check if state collides with obstacles or is outside world bounds"""
         x, y = state[0], state[1]
-        if self.checkWorldBounds(state):
-            return True
+
         # Check half circles
         for center in self.centers:
             # dist = np.sqrt(((x - center[0]) ** 2) + ((y - center[1]) ** 2))
@@ -90,9 +82,9 @@ class RRTPlanner:
 
             # Create Dubins path to random state
             nearestState = self.graph.vertices[nearestId]
-            # edge = DubinsEdge(nearestState, randomState, self.turningRadius)
+            edge = DubinsEdge(nearestState, randomState, self.turningRadius)
 
-            edge = self._getNonCollidingEdge(nearestState, randomState, self.turningRadius)
+
 
 
             # Check path collision
@@ -137,17 +129,3 @@ class RRTPlanner:
             if self.collisionChecker.checkCollision(config):
                 return True
         return False
-
-    def _getNonCollidingEdge(self, nearestState, randomState, turningRadius) -> Tuple[np.ndarray, np.ndarray]:
-        """Find the last non-colliding configuration along the Dubins path"""
-        edge = DubinsEdge(nearestState, randomState, turningRadius)
-        newEdge = None
-        configurations = edge.discretize(self.stepSize)
-        lastCollision = None
-        for i, point in enumerate(configurations):
-            if not self._checkPathCollision(point):
-                lastCollision = configurations[:i]
-            else:
-                newEdge = DubinsEdge(nearestState, lastCollision[-1], turningRadius)
-                break
-        return newEdge
