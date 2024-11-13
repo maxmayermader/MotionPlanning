@@ -26,11 +26,20 @@ class DubinsEdge(Edge):
         self.points = None  # Store discretized points
 
     def discretize(self, step_size: float = 0.1):
-        """Return discretized points along the Dubins path"""
+        """Return discretized points along the Dubins path including start and end points"""
         if self.points is None:
-            configurations, idk = self.path.sample_many(step_size)
+            # Get intermediate configurations
+            configurations, _ = self.path.sample_many(step_size)
+
+            # Ensure start point is included
+            if len(configurations) == 0 or not np.allclose(configurations[0], self.state1):
+                configurations.insert(0, (self.state1[0], self.state1[1], self.state1[2]))
+
+            # Ensure end point is included
+            if len(configurations) == 0 or not np.allclose(configurations[-1], self.state2):
+                configurations.append((self.state2[0], self.state2[1], self.state2[2]))
+
             self.points = np.array(configurations)
-            print(idk)
         return self.points
 
     def getCost(self):
