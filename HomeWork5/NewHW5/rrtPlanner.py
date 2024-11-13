@@ -1,4 +1,3 @@
-# File: RRTPlanner.py
 import math
 
 import numpy as np

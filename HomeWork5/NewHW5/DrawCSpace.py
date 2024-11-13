@@ -1,4 +1,3 @@
-# File: DrawCSpace.py
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -8,7 +7,6 @@ from rrtPlanner import DubinsEdge
 class CSpaceDrawer:
     def __init__(self, stateBounds: list, figsize=(10, 10)):
         self.stateBounds = stateBounds
-        # self.stateBounds = [[-0.8, 0.8], [-1, 1]]
         self.figsize = figsize
         self.fig, self.ax = plt.subplots(figsize=figsize)
         self._setupPlot()
@@ -23,7 +21,6 @@ class CSpaceDrawer:
 
     def drawObstacles(self, centers, radii):
         for center, radius in zip(centers, radii):
-
             # Draw unfilled circle
             circle = plt.Circle(center, radius, color='red', fill=False)
             self.ax.add_artist(circle)
@@ -33,15 +30,13 @@ class CSpaceDrawer:
             self.ax.plot(point[0], point[1],
                          marker=(3, 0, np.degrees(point[2])),
                          markersize=8, color=color)
-            arrow_length = 0.3
 
-    def drawGraph(self, vertices, edges):
+    def drawGraph(self, vertices, edges): # This method was written with help from Gen AI
         """Draw RRT graph with Dubins paths and car positions"""
         # Draw edges
         for edge_id in edges:
             start = vertices[edge_id[0]]
             end = vertices[edge_id[1]]
-            # Create a Dubins path for visualization
             edge = DubinsEdge(start, end, turning_radius=0.5)
             points = edge.discretize(0.1)
 
@@ -50,24 +45,27 @@ class CSpaceDrawer:
                 if len(points.shape) == 1:
                     points = points.reshape(-1, 3)
 
-                # Plot the path
                 self.ax.plot(points[:, 0], points[:, 1], 'k-', alpha=0.3)
 
-                # Plot car positions at regular intervals
-                step = len(points) // 2  # Use half the points
-                if step > 0:  # Ensure we have enough points
+                step = len(points) // 2
+                if step > 0:
                     for i in range(0, len(points), step):
                         self.drawPoint(points[i], color='gray', size=100)
 
-        # Draw vertices
         for state in vertices.values():
             self.drawPoint(state, color='black', size=100)
 
-    def drawPath(self, path, color='blue', linewidth=2):
+    def drawPath(self, path, color='blue', linewidth=2):  # This method was written with help from Gen AI
+        '''
+        Draw the path on the plot
+        :param path:
+        :param color:
+        :param linewidth:
+        :return:
+        '''
         if len(path) < 2:
             return
 
-        # Draw path segments using discretized points
         for i in range(len(path) - 1):
             edge = DubinsEdge(path[i], path[i + 1], turning_radius=0.5)
             points = edge.discretize(0.1)
@@ -86,7 +84,3 @@ class CSpaceDrawer:
 
     def show(self):
         plt.show()
-
-    def clear(self):
-        self.ax.clear()
-        self._setupPlot()

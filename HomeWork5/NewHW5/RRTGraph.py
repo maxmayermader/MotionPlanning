@@ -1,4 +1,3 @@
-# File: RRTGraph.py
 import dubins
 import numpy as np
 from typing import List, Tuple, Optional
@@ -16,7 +15,7 @@ class Edge:
         """Return the cost of the edge"""
         return self.cost
 
-class DubinsEdge():
+class DubinsEdge(Edge):
     """Class representing a Dubins path between two states"""
     def __init__(self, state1: np.ndarray, state2: np.ndarray, turning_radius: float = 0.5):
         super().__init__(state1, state2)

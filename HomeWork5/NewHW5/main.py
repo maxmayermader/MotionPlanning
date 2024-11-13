@@ -1,4 +1,3 @@
-# File: main.py
 import numpy as np
 from rrtPlanner import RRTPlanner, CircleCollisionChecker
 from DrawCSpace import CSpaceDrawer
@@ -8,7 +7,7 @@ def main():
     # Define the state bounds [x, y, θ]
     stateBounds = [(-3, 3), (-1, 1), (-np.pi, np.pi)]
 
-    # Define circular obstacles - two half circles
+    # Define circular obstacles 
     centers = [(0, -1), (0, 1)]  # Centers of half circles
     radii = [0.8, 0.8]  # radius = 1 - dt, where dt = 0.2
 
