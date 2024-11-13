@@ -20,7 +20,7 @@ def main():
         stateBounds=stateBounds,
         collisionChecker=collisionChecker,
         stepSize=0.5,
-        maxIterations=2000,  # Increased iterations for better coverage
+        maxIterations=100,  # Increased iterations for better coverage
         goalSampleRate=0.1  # 10% chance to sample goal
     )
 

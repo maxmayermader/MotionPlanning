@@ -14,15 +14,15 @@ class CircleCollisionChecker:
         self.radius = 0.8  # radius = 1 - dt, where dt = 0.2
 
     def checkCollision(self, state: np.ndarray) -> bool:
-        """Check if state collides with obstacles or is outside world bounds"""
         x, y = state[0], state[1]
 
-        # Check half circles
+        # Check half circles - only check collision if point is on the same side as the circle
         for center in self.centers:
-            # dist = np.sqrt(((x - center[0]) ** 2) + ((y - center[1]) ** 2))
-            dist = math.sqrt(((x - center[0]) ** 2) + ((y - center[1]) ** 2))
-            if dist <= self.radius:
-                return True
+            # Only check collision if point is on the same side (y-coordinate) as the half-circle
+            if (center[1] > 0 and y > 0) or (center[1] < 0 and y < 0):
+                dist = math.sqrt((x - center[0])**2 + (y - center[1])**2)
+                if dist <= self.radius:
+                    return True
         return False
 
 
@@ -115,7 +115,7 @@ class RRTPlanner:
 
         return [], False
 
-    
+
 
     def _sampleRandomState(self) -> np.ndarray:
         """Sample random state (x, y, θ)"""
@@ -128,7 +128,7 @@ class RRTPlanner:
         """Check if Dubins path collides with obstacles"""
 
         # Check world bounds
-        configurations = edge.discretize(self.stepSize)
+        configurations = edge.discretize(0.05)
         for config in configurations:
             if (config[0] < self.stateBounds[0][0] or config[0] > self.stateBounds[0][1] or
                     config[1] < self.stateBounds[1][0] or config[1] > self.stateBounds[1][1]):
