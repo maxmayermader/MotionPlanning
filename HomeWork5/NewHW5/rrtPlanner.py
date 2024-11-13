@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 from typing import List, Tuple, Optional
-from RRTGraph import RRTGraph, Edge, DubinsEdge
+from RRTGraph import RRTGraph, DubinsEdge
 
 
 class CircleCollisionChecker:
@@ -54,12 +54,12 @@ class RRTPlanner:
     def _findLastValidPoint(self, edge: DubinsEdge) -> Optional[np.ndarray]:
         """Find the last valid point along the edge before collision"""
         points = edge.discretize(self.stepSize)
-        last_valid = None
+        lastValid = None
 
         for point in points:
             if self.collisionChecker.checkCollision(point):
-                return last_valid
-            last_valid = point
+                return lastValid
+            lastValid = point
 
         return points[-1]  # Return end point if no collision
 
@@ -74,7 +74,7 @@ class RRTPlanner:
                 randomState = self._sampleRandomState()
 
             # Find nearest vertex
-            nearestId, nearest_point = self.graph.getNearestVertex(
+            nearestId, nearestPoint = self.graph.getNearestVertex(
                 state=randomState,
                 distanceFunc=lambda a, b: np.linalg.norm(a[:2] - b[:2])
             )
@@ -84,27 +84,18 @@ class RRTPlanner:
             edge = DubinsEdge(nearestState, randomState, self.turningRadius)
 
             # Find last valid point before collision
-            last_valid_point = self._findLastValidPoint(edge)
-            new_edge = DubinsEdge(nearestState, last_valid_point, self.turningRadius)
+            lastValidPoint = self._findLastValidPoint(edge)
+            new_edge = DubinsEdge(nearestState, lastValidPoint, self.turningRadius)
 
-            if last_valid_point is not None and not self._checkPathCollision(new_edge):
+            if lastValidPoint is not None and not self._checkPathCollision(new_edge):
                 # Create new edge to last valid point
-                if not np.array_equal(last_valid_point, nearestState):
-                    newId = self.graph.addVertex(last_valid_point)
+                if not np.array_equal(lastValidPoint, nearestState):
+                    newId = self.graph.addVertex(lastValidPoint)
                     self.graph.addEdge(nearestId, newId, new_edge)
 
-                    # Try connecting to goal if close enough
-
-
-                    # if np.linalg.norm(last_valid_point[:2] - goalState[:2]) < self.stepSize:
-                    # if (randomState[0] == last_valid_point[0] and randomState[1] == last_valid_point[1] and
-                    #         randomState[0] == goalState[0] and randomState[1] == goalState[1] and randomState[2] == goalState[2]):
-                    #     del self.graph.edges[(nearestId, newId)]
-                    #     goalId = self.graph.addVertex(randomState)
-                    #     self.graph.addEdge(newId, goalId, edge)
-                    #     return self.graph.getPath(startId, goalId), True
-                    if self._isWithinTolerance(last_valid_point, goalState):
-                        goalEdge = DubinsEdge(last_valid_point, goalState, self.turningRadius)
+                    # Try connecting to goal
+                    if self._isWithinTolerance(lastValidPoint, goalState):
+                        goalEdge = DubinsEdge(lastValidPoint, goalState, self.turningRadius)
                         if not self._checkPathCollision(goalEdge):
                             if self.graph.vertices[len(self.graph.vertices) - 1][0] == goalState[0] and self.graph.vertices[len(self.graph.vertices) - 1][1] == goalState[1]:
                                 goalId = len(self.graph.vertices) - 1
@@ -112,10 +103,7 @@ class RRTPlanner:
                                 goalId = self.graph.addVertex(goalState)
                             self.graph.addEdge(newId, goalId, goalEdge)
                             return self.graph.getPath(startId, goalId), True
-
         return [], False
-
-
 
     def _sampleRandomState(self) -> np.ndarray:
         """Sample random state (x, y, θ)"""

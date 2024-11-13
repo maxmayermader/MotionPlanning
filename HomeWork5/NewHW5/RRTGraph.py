@@ -16,7 +16,8 @@ class Edge:
         """Return the cost of the edge"""
         return self.cost
 
-class DubinsEdge(Edge):
+class DubinsEdge():
+    """Class representing a Dubins path between two states"""
     def __init__(self, state1: np.ndarray, state2: np.ndarray, turning_radius: float = 0.5):
         super().__init__(state1, state2)
         q1 = (state1[0], state1[1], state1[2])
@@ -26,8 +27,8 @@ class DubinsEdge(Edge):
         self.points = None  # Store discretized points
 
     def discretize(self, step_size: float = 0.1):
-        """Return discretized points along the Dubins path"""
-        if self.points is None:
+        """Return discretized points along the Dubins path. Given a step size"""
+        if self.points is None: #If points are not already computed
             configurations, _ = self.path.sample_many(step_size)
 
             # Convert configurations to numpy array
@@ -46,16 +47,12 @@ class DubinsEdge(Edge):
             self.points = points
         return self.points
 
-    def getCost(self):
-        return self.length
-
 class RRTGraph:
     """A class representing the RRT graph structure"""
-
     def __init__(self):
-        self.vertices = {}  # vertex ID -> state
-        self.parents = {}  # vertex ID -> list of parent IDs
-        self.edges = {}  # (vertex1_id, vertex2_id) -> (cost, edge)
+        self.vertices = {}  # vertex ID : state
+        self.parents = {}  # vertex ID : list of parent IDs
+        self.edges = {}  # (vertex1_id, vertex2_id) : (cost, edge)
 
     def addVertex(self, state: np.ndarray) -> int:
         """Add a vertex at a given state"""

@@ -20,7 +20,7 @@ def main():
         stateBounds=stateBounds,
         collisionChecker=collisionChecker,
         stepSize=0.5,
-        maxIterations=100,  # Increased iterations for better coverage
+        maxIterations=2000,  # Increased iterations for better coverage
         goalSampleRate=0.1  # 10% chance to sample goal
     )
 
@@ -32,8 +32,8 @@ def main():
     path, success = planner.plan(startState, goalState)
     print(f"Success: {path}")
 
-    # Visualize
-    drawer = CSpaceDrawer(stateBounds[:2])  # Only pass x,y bounds for 2D visualization
+    # Visualizer
+    drawer = CSpaceDrawer(stateBounds[:2])
 
     # Draw obstacles
     drawer.drawObstacles(centers, radii)
@@ -41,12 +41,6 @@ def main():
 
 
     if success:
-
-        # drawer.drawGraph(planner.graph.vertices, planner.graph.edges.keys())
-
-
-        # drawer.drawPath(path)
-        # Draw the RRT graph
         drawer.drawGraph(planner.graph.vertices, planner.graph.edges)
         # Draw the final path
         drawer.drawPath(path)
