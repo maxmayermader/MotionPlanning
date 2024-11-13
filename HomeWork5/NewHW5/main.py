@@ -48,7 +48,7 @@ def main():
         drawer.drawGraph(planner.graph.vertices, planner.graph.edges)
         print("No path found!")
 
-    # Draw start and goal configurations with orientation 
+    # Draw start and goal configurations with orientation
     drawer.drawPoint(startState, color='green', size=200)
     drawer.drawPoint(goalState, color='red', size=200)
 
